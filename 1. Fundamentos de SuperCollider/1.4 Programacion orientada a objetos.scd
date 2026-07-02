@@ -19,7 +19,15 @@ Carro.detiene(4s);
 Los objetos ocultan sus detalles internos y los expone únicamente mediante accesos controlados a sus datos y métodos.
 
 La POO permite la creación de nuevas clases basadas en clases existentes.  Esto se llama heredar e implica que las clases tienen disponibles algunas de las características de las clases superiores en jerarquía.
+
+La síntaxis usual de los objetos de SuperCollider es:
+
+Clase.método(argumento 1,argumento 2, argumento 3);
 */
+
+{SinOsc.ar(440,0,0.5,0)}.scope();
+
+
 
 //Más sobre programación orientada a objetos
 "https://www.luisllamas.es/curso-programacion-orientada-objetos/".openOS;
