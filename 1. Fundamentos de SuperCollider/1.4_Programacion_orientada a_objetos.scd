@@ -29,11 +29,11 @@ Date.localtime; //Clase.método *SIN ARGUMENTOS*
 
 Array.rand(10,0,10); //Clase.método.(arg1 *Tamaño*, arg2 *LímiteInferior* , arg3 *LímiteSuperior*).
 
-(
+
 s.boot;
 {SinOsc.ar(440,0,0.5,0)}.plot;
 {SinOsc.ar(440,0,0.5,0)}.scope;
-)
+
 
 
 //Más sobre programación orientada a objetos
