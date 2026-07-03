@@ -19,9 +19,11 @@ El sonido resulta de la perturbación mecánica de un objeto en un medio elásti
 (thisProcess.nowExecutingPath.dirname +/+ "media/escucha.gif").openOS;
 
 //Si la presión varía deacuerdo a un patrón repetitivo, hablamos de una forma de onda periódica.
+{SinOsc.ar(220,mul: 0.3)}.plot;
 {SinOsc.ar(220,mul: 0.3)}.scope;
 
 //Si no hay un patrón discernible, hablamos de ruido.
+{WhiteNoise.ar(0.2)}.plot;
 {WhiteNoise.ar(0.2)}.scope;
 
 //Enmedio de estos extremos existe un inmenso expectro de sonidos casi periódicos/ruidosos.
@@ -31,6 +33,7 @@ El sonido resulta de la perturbación mecánica de un objeto en un medio elásti
 
 //El número de periodos por segundo definen su frecuencia fundamental, la cual define la percepción de altura de un sonido (que tan grave o agudo es). Los ciclos por segundo se miden en Hertz (1Hz = 1 ciclo por segundo)
 
+{SinOsc.ar(freq: 1)}.plot(1);
 {SinOsc.ar(freq: 100)}.plot(0.1);
 {SinOsc.ar(freq: 400)}.plot(0.1);
 
