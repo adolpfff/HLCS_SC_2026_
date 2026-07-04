@@ -25,6 +25,10 @@ Los estándares más comunes son 44100 veces por segundo o 48000 veces por segun
 
 Server.default.options.sampleRate_(48000);
 
+// ó
+
+Server.default.options.sampleRate = 48000;
+
 //Para comprobarlo usamos
 Server.default.sampleRate;
 
@@ -37,6 +41,7 @@ A mayor cantidad de bits, mayor es el rango dinámico que un sistema de audio di
 */
 
 (PathName.new(thisProcess.nowExecutingPath).parentPath +/+ "media/bitDepth.png").openOS;
+//(PathName.new(thisProcess.nowExecutingPath).parentPath +/+ "media/bits.gif").openOS;
 
 /*
 Este parámetro se conoce como profundidad de bits y también define los decibeles máximos que puede representar un registro de audio digital. Esto se calcula con la fórmula:

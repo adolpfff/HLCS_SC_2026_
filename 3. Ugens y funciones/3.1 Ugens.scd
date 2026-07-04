@@ -52,7 +52,10 @@ Los Ugens nos proveen de un sistema modular eficiente para crear redes complejas
 
 //Es recomendable explorar los Ugens listados en el árbol de clases.
 
+UGen.help;
 
+// Guia breve sobre algunos UGens importantes.
+HelpBrowser.openHelpFor("Tour of UGens");
 
 UGen Processing Model
 
