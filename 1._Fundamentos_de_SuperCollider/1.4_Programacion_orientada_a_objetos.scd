@@ -25,25 +25,7 @@ La síntaxis usual de los objetos de SuperCollider es:
 Clase.método(argumento 1,argumento 2, argumento 3);
 */
 
-Date.localtime; //Clase.método *SIN ARGUMENTOS*
-
-Array.rand(10,0,10); //Clase.método.(arg1 *Tamaño*, arg2 *LímiteInferior* , arg3 *LímiteSuperior*).
-
-
-s.boot;
-{SinOsc.ar(440,0,0.5,0)}.plot;
-{SinOsc.ar(440,0,0.5,0)}.scope;
-
-CmdPeriod.run;
-
-// o solo presiona Cmd (ctrl) + .
-//
+{SinOsc.ar(440,0,0.5,0)}.scope();
 
 //Más sobre programación orientada a objetos
 "https://www.luisllamas.es/curso-programacion-orientada-objetos/".openOS;
-
-
-//Tutorial anterior
-"1.3.3_Navegar_la_ayuda.scd".openOS;
-
-(PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.3.3_Navegar_la_ayuda.scd").openOS;

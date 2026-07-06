@@ -15,6 +15,12 @@ Un lenguaje de programación basado en texto que actua como cliente para el serv
 3) ScIDE
 Un editor para SuperCollider con un sistema de ayuda integrado.
 
+A diferencia del scIDE y sclang, el servidor de supercollider no se inicia automáticamente al abrir la plataforma. Se puede prender con Ctrl (Cmd) + b o con la línea de código:
+*/
+
+s.boot;
+
+/*
 ¿Por qué no juntar todo en una arquitectura unificada?
 
 El diseño de SuperCollider está pensado para ser extremadamente flexible y eficiente en el trabajo con audio en múltiples contextos. Algunas de las ventajas que ofrece la división de SC en tres componenetes son:
@@ -27,9 +33,7 @@ El diseño de SuperCollider está pensado para ser extremadamente flexible y efi
 
 -La conexión de múltiples clientes a un solo servidor.
 
--La posibilidad de crear múltiples instancias del servidor para:
-(1) gestionar procesos independientes en paralelo (esto evita que un proceso intensivo afecte al resto),
-(2) configurar una salida de audio distinta para cada servidor (esto permite generar sonido en múltiples salidas de manera simultanea).
+-La posibilidad de crear múltiples instancias del servidor para: (1)gestionar procesos independientes en paralelo (esto evita que un proceso intensivo afecte al resto),(2)configurar una salida de audio distinta para cada servidor (esto permite generar sonido en múltiples salidas de manera simultanea).
 
 -y...¡MUCHAS otras posibilidades!
 
@@ -37,13 +41,8 @@ El diseño de SuperCollider está pensado para ser extremadamente flexible y efi
 
 
 
-
 //Para ir al siguiente tutorial, ejecuta la siguiente línea de código
-"1.2.1_Conociendo_el_scIDE".openOS;
-
-(PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.2.1_Conociendo_el_scIDE").openOS;
+(PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.2.1_Conociendo_el_scIDE.scd").openOS;
 
 //Para ir al tutorial anterior, ejecuta la siguiente línea de código
-"1.1_Presentacion_y_recursos".openOS;
-
-(PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.1_Presentacion_y_recursos").openOS;
+(PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.1_Presentacion_y_recursos.scd").openOS;

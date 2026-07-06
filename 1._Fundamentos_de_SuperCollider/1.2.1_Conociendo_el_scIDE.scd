@@ -13,7 +13,7 @@ img = Image.open(thisProcess.nowExecutingPath.dirname +/+ "/media/IDE.png");
 UserView(ventana,ventana.view.bounds).drawFunc_({img.drawInRect(Rect(0, 0, 1151, 711)) });
 
 ventana.front;
-)
+);
 
 /*
 Como se puede observar en la imágen, scIDE se compone de:
@@ -25,11 +25,10 @@ Muestra el nombre de la sesión o sesiones y su ruta.
 Espacio de trabajo para crear, editar y ejecutar código.
 
 3. Pestañas de documentos
-Se encuentran por encima del editor, cada una corresponde a un documento.
-Se pueden navegar con Ctrl(^) + Tab, o Ctrl(^) + Shift + Tab.
+Se encuentran por encima del editor, cada una corresponde a un documento. Se pueden navegar con Ctrl (o Cmd) + Tab, o Ctrl (o Cmd) + Shift + Tab
 
 4. Barra de herramientas
-Muestra herramientas relacionadas al código. Está oculta por defecto. Se puede activar desde View > Tool Panels, o con los siguientes comandos de teclado:
+Muestra heeramientas relacionadas al código. Está oculta por defecto. Se puede activar desde View > Tool Panels, o con los siguientes comandos de teclado:
 
 Buscar: Ctrl + F
 Remplazar: Ctrl + R
@@ -66,13 +65,7 @@ Estos últimos tres elementos (lista de documentos, navegador de ayuda y ventana
 */
 
 //Para ir al siguiente tutorial, ejecuta la siguiente línea de código:
-"1.3_Acciones_basicas.scd".openOS;
-
 (PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.3_Acciones_basicas.scd").openOS;
 
 //Para ir al tutorial anterior, ejecuta la siguiente línea de código:
-
-"1.2_Arquitectura_de_supercollider.scd".openOS;
-
 (PathName.new(thisProcess.nowExecutingPath).parentPath+/+"1.2_Arquitectura_de_supercollider.scd").openOS;
-
