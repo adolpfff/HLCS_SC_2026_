@@ -1,4 +1,100 @@
-//Lista de patrones más comunes para generar secuencias numéricas
+//Rutinas 2.
+
+//Una rutina también puede ser una serie de aprocesos que se activen de acuerdo a un comando.
+(
+~exemplo = Routine({ //abrimos una rutina.
+	var x = 0; //declaramos la variable x = 0.
+
+	loop({ //abrimos un loop dentro de la rutina.
+		("Soy una rutina en mi ciclo" + x ).yield; //usamos yield igual que .wait
+
+		x = x+1; //aumentamos el valor de x por 1.
+	});
+});
+)
+
+~exemplo.next; //utilizo el metodo .next para llamar al siguiente valor.
+
+~exemplo.reset; //también podemos resetear el proceaso.
+~exemplo.stop; //.stop detiene el proceso y lo asesina :(
+
+//Patrones.
+Pattern
+
+//Una librería compleja dedicada a la secuenciación en contextos musicales.
+//Un objeto de la clase Pattern es como una partitura, en el sentido de que es una serie de instrucciones que por si mismas no pueden ejecutar nada.
+
+//Al evaluar el objeto Pseq, solo nos regresa el mismo (similar a las funciones).
+x = Pseq([1,2,3,4,5,9], 1);
+
+//cuando evaluamos el metodo .asStream, le indicamos al patron opere como una secuencia, o rutina.
+y = x.asStream;
+
+//ahora y, obedece al metodo .next
+y.next;
+
+//una vez que se termina la secuencia el metodo .reset reanuda la operación.
+y.reset;
+
+//Comparemos un Pseq con una versión descrita como Routine
+
+a = [1,2,3,4,5,9]; //guardamos en "a" un arreglo
+
+~pat = Pseq(a,1);
+~str = ~pat.asStream;
+
+~rout = Routine({
+	a.do({arg it; it.yield}); //.yield y .wait hacen lo mismo, entregar el valor sobre el que están funcionando.
+});
+
+(
+~str.next.postln;
+~rout.next.postln;
+)
+
+(
+~str.reset;
+~rout.reset;
+)
+
+//hagamos un ejemplo aplicado.
+
+~freq = (Scale.major.semitones + 60).midicps; //Escala mayor de C en Hz como un arreglo.
+
+~pattern = Pseq(~freq,inf); //lo introducimos a un Pseq con un valor de repetición inf.
+~stream = ~pattern.asStream; //lo embebemos en un stream
+
+~sig = {SinOsc.ar(\freq.kr) * XLine.ar(1,0.000001,0.25,doneAction: 2)}; //sintetizador con envolvente.
+
+(
+~routine = Routine({ //abrimos una rutina.
+	var freq, sig; //creamos 2 variables freq y sig.
+	inf.do{ //abrimos un ".do" sobre infinito (similar a loop).
+		freq = ~stream.next; //a la variable local le asignamos el siguiente valor del stream.
+		freq.postln; //aquí se reporta en la post.
+		sig = ~sig.play(args:[\freq, freq]); //sobre la variable sig guardamos la reproducción del sinte ~sig y le asignamos como argumento de inicio el valor en freq.
+		rrand(0.1,0.2).wait; //Como con loop, es importante indicar un tiempo de .wait. En este caso es aleatorio entre 0.1 y 0.2.
+	};
+});
+)
+~routine.play; //reproducimos la rutina.
+
+~routine.stop; //detiene la rutina.
+
+(
+~routine.reset; //resetea la rutina.
+~routine.play; //vuelve a reproducir la rutina desde donde se quedo.
+)
+
+//podemos resetear también el stream del patron.
+~stream.reset;
+
+~routine.stop;
+
+
+/*/////////////////////////////////////////////////////////////////
+//Lista de patrones más comunes para generar secuencias numéricas//
+*//////////////////////////////////////////////////////////////////
 
 /*
 Pseq
@@ -89,3 +185,4 @@ Secuencia una serie geométrica. Se especifica un número inicial y el factor de
 ~sec_9 = ~pat_9.asStream;
 ~sec_9.next;
 ~sec_9.reset;
+
