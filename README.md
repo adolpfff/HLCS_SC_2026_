@@ -25,10 +25,9 @@
 * Funciones
 * Argumentos y variables
 
-#### Eventos en el tiempo
+#### Eventos en el tiempo I
 * Relojes
 * Rutinas
-* Loop
 
 #### Ejercicios prácticos
 * Ejercicio de composición colectiva / “En Do” u otra canción simple / Ejercicios en equipos e improvisación.
@@ -43,9 +42,9 @@
 * Nodos y done action
 * Aleatoriedad
 
-#### Control de eventos en el tiempo
+#### Eventos en el tiempo II
+* Eventos 
 * Patrones
-* Eventos
 * Reproducción de eventos
 
 #### Grabación
