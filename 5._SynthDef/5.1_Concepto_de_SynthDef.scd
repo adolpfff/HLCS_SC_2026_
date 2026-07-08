@@ -18,96 +18,95 @@ SynthDef.new(//Clase SynthDef con método .new
 )
 
 /*
-Si queremos reproducir el resultado de la definición de manera inmediata (creando su respectivo nodo de síntesis), usamos el método .play
-
-Si queremos agregar una definición de síntesis al servidor sin crear el nodo de síntesis de manera inmediata, usamos  el método .add
+Si queremos reproducir el resultado de la definición de manera inmediata (creando de forma automática su respectivo nodo de síntesis), usamos el método .play
 
 Pero entonces, ¿por qué no obtenemos sonido al evaluar la definición anterior?
 
-Hasta ahora hemos estado generando sonido con funciones y el método .play. Sin embargo, la estructura de definiciones y nodos de síntesis es la única forma de producir sonido en superCollider. Aplicado a una función, el método .play crea automáticamente una definción y un nodo de síntesis. Si la función no cuenta con parámetros de envolvente y de salida, el método .play los añade de manera automática. Cuando creamos una definición de síntesis personalizada, la envolvente y la salida deben ser especificadas manualmente.
+Hasta ahora hemos estado generando sonido con funciones y el método .play. Sin embargo, la estructura de definiciones y nodos de síntesis es la única forma de producir sonido en SuperCollider. Aplicado a una función, el método .play crea automáticamente una definción y un nodo de síntesis. Si la función no cuenta con parámetros de envolvente y de salida, el método .play los añade de manera automática. Cuando creamos una definición de síntesis personalizada, la envolvente y la salida deben ser especificadas manualmente.
 */
 
 (
 SynthDef.new(
 	\miPrimerSinte,
-	{var sig, env; //Agregamos variables para más claridad en el proceso
-		sig = Pulse.ar(220,0.4); //Generador de unidades
-		env = Env.perc().kr(2); //EnvolventeF
-		sig = sig * env; //Aplicación de la envolvente a la señal de audio
+	{var sig; //Agregamos variables para más claridad en el proceso
+		sig = Pulse.ar(220,0.5,0.4); //Generador de unidades
 		Out.ar(0,sig) //EFspecificación de la salida
 		}
 ).play;
 )
 
-//Out toma dos argumentos: (1) el número de índex del bus o buses por los que saldrá la señal de audio o control (0 y 1 a menudo son los canales izquierdo y derecho respectivamente), (2) un UGen o arreglo de Ugens.
+//Out toma dos argumentos: (1) el número de índice del bus o buses por los que saldrá la señal de audio o control (0 y 1 a menudo son los canales izquierdo y derecho respectivamente), (2) un UGen o arreglo de Ugens.
 
 /*
-Una vez que una definción de síntesis se manda al servidor, permanece disponible mientras el servidor esté inicializado. Para hacer cambios en la definción, hay que declararla de nuevo con los cambios. Los nombres de cada SynthDef deben ser únicos para evitar referenciar con un mismo nombre cosas distintas.
+Los nodos de síntesis activos se pueden consultar en el árbol de nodos. Se puede accesar a esta herramienta desde
 
-Una definción de síntesis añadida al servidor se ejecuta de manera asincrónica con la clase Synth. Como mínimo, Synth necesita el nombre de la definición de síntesis para funcionar.
+1. Barra de herramienta1s > Server > Show Node Tree
+2. El atajo de teclado: Ctrl + Alt + T
+3. La línea de código: */
+
+NodeTreeView(s).start;
+
+/*
+Si queremos agregar una definición de síntesis al servidor sin crear el nodo de síntesis de manera inmediata, usamos  el método .add
+
+Una vez que una definción de síntesis se manda al servidor, permanece disponible mientras el servidor esté inicializado. Para hacer cambios en la definción, hay que declararla de nuevo con los cambios.
+
+Los nombres de cada SynthDef deben ser únicos para evitar referencias cruzadas.
 */
 
-//Añadimos la definición de síntesis al servidor
 (
 SynthDef.new(
 	\miPrimerSinte,
-	{var sig, env; //Agregamos variables para más claridad en el proceso
-		sig = Pulse.ar(220,0.4); //Generador de unidades
-		env = Env.perc().kr(2); //EnvolventeF
-		sig = sig * env; //Aplicación de la envolvente a la señal de audio
+	{
+		arg freq = 440, amp = 0.4;
+		var sig;
+		sig = Pulse.ar(freq,0.4,amp); //Argumentos de frecuencia y amplitud
 		Out.ar(0,sig) //Especificación de la salida
 		}
 ).add;
 )
 
-//La ejecutamos con Synth
+//Una definción de síntesis añadida al servidor se ejecuta de manera asincrónica con la clase Synth. Como mínimo, Synth necesita el nombre de la definición de síntesis para funcionar.
+
 Synth(\miPrimerSinte);
 
-//Si asignamos
+//Synth también puede especificar argumentos iniciales específicos
 
+Synth(\miPrimerSinte, [\freq, 1000, \amp, 0.8]);
 
+//Si asignamos la reproducción de Synth a una variable, podemos interectuar con ella después del inicio de su reproducción
 
-We can execute a SynthDef algorithm by instantiating a Synth. At minimum, the Synth needs
-to know the name of the SynthDef to be used. If we assign the Synth to a variable, we can com-
-municate with it at a point in the future (see Code Example 2.30). Note that we don’t need to
-explicitly “play” a Synth; simply creating a Synth puts it in an active state on the audio server.
+//Almacenamiento de la reproducción de Synth en la variable global "~nodo1"
+~nodo1 = Synth(\miPrimerSinte, [\freq, 150, \amp, 1]);
 
+//Modificación de argumentos con el método .set
+~nodo1.set(\freq, 999, \amp, 0.3);
+
+//Parámetros aleatorios de arguementos establecidos con .set
+
+~nodo1.set(\freq, exprand(50,1000), \amp, rrand(0.3,1));
+
+//Liberación del nodo
+~nodo1.free;
 
 //Con una sola definición, pueden crearse múltiples nodos de síntesis sin compilar la definición en cada ocasión. Esto contribuye a optimizar recursos y presenta una ventaja de procesamiento con el método .play en una función, el cual tiene que compilarse cada vez que se ejecuta.
 
-EJEMPLO
+(
+~nodo1 = Synth(\miPrimerSinte, [\freq, 100, \amp, 1]);
+~nodo2 = Synth(\miPrimerSinte, [\freq, 200, \amp, 0.8]);
+~nodo3 = Synth(\miPrimerSinte, [\freq, 400, \amp, 0.6]);
+~nodo4 = Synth(\miPrimerSinte, [\freq, 800, \amp, 0.4]);
+~nodo5 = Synth(\miPrimerSinte, [\freq, 1600, \amp, 0.2]);
+)
 
-//Si se asigna la reproducción de un nodo de síntetesis a una variable se puede controlar su comprtamiento de varias maneras.
+(
+~nodo1.free;
+~nodo2.free;
+~nodo3.free;
+~nodo4.free;
+~nodo5.free;
+)
 
-EJEMPLO
+//Una definción de síntesis es una entidad estática una vez que se declara, sin embargo, puede llegar a ser bastante flexible por medio de argumentos.
 
-It is important to understand that although a single def can provide a great deal of flexibility through its arguments, etc., it is nevertheless a static entity. A def's UGen graph function (and the SC code within it) is evaluated only when the def is created. Thus statements like while, do, collect etc. will have no further effect at the time the def is used to create a Synth, and it is important to understand that a UGen graph function should not be designed in the same way as functions in the language, where multiple evaluations can yield different results. It will be evaluated once and only once.
-
-
-Like a good recipe book, a SynthDef
-should be maximally flexible, so that it can be used to spawn a maximally diverse collection of
-tangible results. If a SynthDef is poorly designed (i.e., with a limited set of recipes), the sounds
-that can be produced will be similarly limited. Flexible SynthDef design primarily involves
-declaring plenty of arguments, so that numerous UGen parameters can be customized and
-controlled.
-
-
-
-This is more efficient than repeatedly calling play on the same Function, as it saves the effort of evaluating the Function, compiling the byte code, and sending it multiple times. In many cases this saving in CPU usage is so small as to be largely insignificant, but when doing things like 'mass producing' synths, this can be important.
-Synth understands some methods which allow you to change the values of args after a synth has been created. For now we'll just look at one, 'set'. Synth-set takes pairs of arg names and values.
-
-Both Function-play and SynthDef-play return another type of object, a Synth, which represents a synth on the server. If you store this object by assigning it to a variable you can control it's behaviour in various ways.
-
-Una vez instanciado un Synth y habiendo almacenado su reproducción en una variable, el método .set recibe como argumentos pares de nombres de argumentos y valores.
-
-
-Comunmente es conveniente mandar el byte code al servidor sin crear inmediatamente el synth. Debido a que una función debe primero convertirse a una SynthDef y repetir este proceso cada que se reproduce, es mejor en cuestión de optimización de recursos utilizar synthdefs sobre funciones. Por otra parte, la estructura de funciones ofrece una mayor flexibilidad
-
-
-For short examples and quick tests, function-dot-play is convenient and saves time.
-However, in cases where reuse and flexibility of signal algorithms are of greater importance,
-it’s preferable to use SynthDef and Synth. In fact, using Synth and SynthDef is the only way
-to create sound in SuperCollider. When we invoke function-dot-play, a SynthDef and Synth
-are created for us in the background.
-
-
+//Para ejemplos cortos y pruebas rápidas, la estructura de función y el método .play puede llegar a ser más conveniente y apropiada que una definición de síntesis. Sin embargo, en proyectos grandes y algoritmos complejos de generación o procesamiento de audio, ua definición e síntesis nos provee de mayor felxibilidad y optimización de recursos.
