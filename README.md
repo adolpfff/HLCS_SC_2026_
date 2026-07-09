@@ -9,6 +9,11 @@
 * Descripción, breve historia, arquitectura, y acciones básicas.
 * Programación orientada a objetos: clases, métodos y argumentos.
 
+#### Tipos de datos
+* SympleNumber
+* Symbol
+* Arrays
+
 #### Audio digital básico
 * Sonido
 * Frecuencia 
@@ -16,8 +21,6 @@
 * Fase 
 * Frecuencia de muestreo 
 * Profundidad de bits
-
-#### Descanso
 
 #### UGens y funciones
 * UGens
@@ -35,20 +38,20 @@
 
 ## Día 2
 #### SynthDef
-* Concepto de SynthDef
-* Envolventes
-* Arrays y expansión multicanal
-* Paneos
-* Nodos y done action
+* Definiciones de síntes y nodos de síntesis
+* Envolventes y done action
+* Paneos Y expansión multicanal
 * Aleatoriedad
 
 #### Eventos en el tiempo II
 * Eventos 
 * Patrones
 * Reproducción de eventos
+* Sincronización de reproductores de eventos
 
 #### Grabación
 * s.record
+* s.makeGui
 
 #### Ejercicios prácticos
 * SynthDef colaborativo
@@ -63,20 +66,18 @@
 * SoundIn
 * Buses
 * Filtros
+* Grupos de nodos y orden de procesamiento
 * Efectos
 
-#### Control de eventos sincronizados en el tiempo
-* Ppar y sincronización de reproductores de eventos
-* Quant
-* Pdef y/o Pmono
+#### Técnicas de síntesis I
+* Síntesis aditiva
+* Síntesis sustractiva
 
 #### Ejercicios prácticos
 * Pequeña pieza individual o en conjunto
 
 ## Día 4
-#### Técnicas de síntesis
-* Síntesis aditiva
-* Síntesis sustractiva
+#### Técnicas de síntesis II
 * Síntesis AM
 * Síntesis FM
 
