@@ -24,7 +24,7 @@
 
 #### Generadores de unidades y funciones
 * Generadores de unidades
-* Gneradores de unidades básicos de producción de sonido
+* Generadores de unidades básicos de producción de sonido
 * Funciones
 * Argumentos y variables
 
@@ -40,7 +40,7 @@
 #### Definiciones de síntesis y nodos de síntesis 
 * SynthDef y Synth 
 * Envolventes y done action
-* Paneos y expansión multicanal
+* Expansión multicanal
 * Aleatoriedad
 
 #### Eventos en el tiempo II
