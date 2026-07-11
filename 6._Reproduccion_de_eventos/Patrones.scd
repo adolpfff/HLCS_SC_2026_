@@ -319,3 +319,62 @@ Event
 /*/////////////////////////
 //COMBO: SynthDef + Pbind//
 *//////////////////////////
+
+//Es posible correr un SynthDef a travez de un Pbind.
+().play; //Existe una clave llamada 'instrument' el cual determina el "instrumento" que va a utilizar el Pbind para generar sonido y a su vez claves.
+//Consideremos el siguiente SynthDef.
+(
+SynthDef.new(\pbind,{
+	arg freq, amp, atk, rel; //Fijate en todos los argumentos definidos. Mas adelante serán nuestras claves.
+	var sig, env;
+	env = EnvGen.kr(Env.perc(atk,rel),doneAction: 2);
+	sig = SinOsc.ar(freq, mul: amp);
+	// sig = Saw.ar({freq, amp);
+	sig = sig * env;
+	Out.ar(0,sig!2);
+}).add;
+)
+//Creamos un Pbind.
+(
+~pat = Pbind(
+	\instrument, \pbind,
+	\freq, Pseq([60,60,67,67,69,69,67].midicps,1),
+	// \midinote, Pseq([60,60,67,67,69,69,67],1),
+	\amp, Pseq([0.75,0.2],4),
+	\atk, 0.125,
+	\rel, 0.125,
+	\dur, 0.5,
+);
+~seq = ~pat.play;
+)
+
+(
+~pat = Pbind(
+	\instrument, \pbind,
+	\midinote, Pshuf((60,62..72),inf),
+	\amp, Prand((0.125,0.5..1),inf),
+	\atk, 0.1,
+	\rel, 0.15,
+	\dur, 0.25,
+);
+)
+~seq = ~pat.play;
+~seq.stop;
+~seq.play;
+~seq.reset;
+
+~seq.unmute;
+
+~seq.pause;
+~seq.resume;
+
+(
+~seq.stream = Pbind(
+	\instrument, \pbind,
+	\midinote, Prand([60,61,67,69,70],inf)+0.5.ratiomidi,
+	\amp, Prand((0.125,0.5..0.75),inf),
+	\atk, Prand([0.01,0.5],inf),
+	\rel, 0.15,
+	\dur, Pseq([0.125],inf),
+).asStream;
+)
