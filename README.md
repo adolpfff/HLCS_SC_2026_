@@ -22,9 +22,11 @@
 * Frecuencia de muestreo 
 * Profundidad de bits
 
-#### Generadores de unidades y funciones
+#### Generadores de unidades
 * Generadores de unidades
 * Generadores de unidades básicos de producción de sonido
+
+#### Funciones
 * Funciones
 * Argumentos y variables
 
@@ -32,12 +34,8 @@
 * Relojes
 * Rutinas
 
-#### Ejercicios prácticos
-* Ejercicio de composición colectiva / “En Do” u otra canción simple / Ejercicios en equipos e improvisación.
-* Ejercicios individuales de composición.
-
 ## Día 2
-#### Definiciones de síntesis y nodos de síntesis 
+#### Definiciones de síntesis y nodos 
 * SynthDef y Synth 
 * Envolventes y done action
 * Expansión multicanal
@@ -53,12 +51,8 @@
 * s.record
 * s.makeGui
 
-#### Ejercicios prácticos
-* SynthDef colaborativo
-* Ejercicios individuales de Pbind e improvisación colectiva
-
 ## Día 3
-#### SynthDef para reproducción de audio
+#### Reproducción de audio
 * Buffers y manejo de archivos de audio
 * Reproducción de archivos de audio
 
