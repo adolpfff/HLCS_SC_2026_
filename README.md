@@ -59,6 +59,7 @@
 #### Procesamiento de audio
 * SoundIn
 * Efectos
+* Modulaciones
 
 #### Técnicas de síntesis I
 * Síntesis aditiva

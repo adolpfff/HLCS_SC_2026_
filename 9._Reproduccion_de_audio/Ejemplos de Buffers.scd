@@ -30,7 +30,7 @@ Buffer.read(server: s, path: ~ruta);
 
 //2) Utilizar código para hacer referencia a una ruta relativa de la carpeta que contiene nuestro archivo (y no al directorio de una computadora específica). Para ello utilizamos la siguiente línea de código:
 
-~ruta =  thisProcess.nowExecutingPath.dirname +/+ "media" +/+ "sonidos" +/+ "miau.wav";
+~ruta =  thisProcess.nowExecutingPath.dirname +/+ "media" +/+ "sonidos" +/+ "lluvia_aves.aiff";
 
 /*
 thisProcess es una palabra reservada, es decir, tiene un significado especial para el lenguaje de programación. El intérprete la reconoce como parte de la sintaxis del lenguaje y no puede usarse como nombre de una variable, función, clase u otro identificador. Otros ejemplos de palabras reservadas son: var, arg, if, true, false, this, etc.
@@ -49,91 +49,185 @@ dirname devuelve el directorio que contiene al archivo
 //Este segundo tipo de sintaxis para rutas de archivos garantiza la compatibilidad entre distintas computadoras y sistemas operativos.
 
 //Luego de almacenar la ruta del archivo en una variable podemos referenciarla como argumento de Buffer.read
-
 Buffer.read(server: s, path: ~ruta);
 
-//Start frame es un cá
-~miau.getn(0, 1000, { |array|
-    array.postln; // o cualquier otro procesamiento
-});
+//Definiremos el frame de inicio como 0 si queremos leer el archivo desde el principio
+Buffer.read(server: s, path: ~ruta, startFrame: 0);
+
+//Definiremos numFrames como -1 si queremos leer todos los frames del archivo
+Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: -1);
+
+//O podemos hacer el cálculo de los segundos que querramos con la fórmula: rate de nuestro buffer * segundos
+Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5);
+
+//Agregar una función que se ejecute al terminar de cargar el buffer es opcional (aunque útil en algunas ocasiones)
+Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln});
+
+//SuperCollider asigna un número de buffer automáticamente, aunque también podemos definirlo manualmente
+Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln}, bufnum: 0);
+
+//Finalmente lo almacenamos en una variable para poder hacer referencias posteriores a este buffer en específico.
+~aves = Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln}, bufnum: 0);
 
 /*
-Una vez cargado el buffer, este responde a los métodos:
+Una vez cargado y almacenado en una variable, el buffer responde a los métodos:
+.duration (duración del buffer)
+.bufnum (número de buffer en el servidor)
+.numFrames (número de muestras del buffer)
+.numChannels (número de canales del buffer)
+.sampleRate (frecuencia de muestreo del buffer)
+.query (número de buffer, número de muestras, número de canales y frecuencia de muestreo)
 .plot (visualizar el buffer)
 .play (reproducir el buffer)
 .free (liberar el buffer)
 */
-~miau.postln;
-~miau.size;
 
-~miau.plot();
-~miau.play;
-~miau.free; //(Después de ejecutar esto es necesario volver a cargar el buffer)
-
-/*
-También es posible obtener información del buffer con los métodos
-.duration (duración del buffer)
-.numFrames (número total de muestras contenidas en el Buffer)
-.bufnum (número de buffer con el cuál es identificado en el servidor)
-.numChannels (número de canales del buffer)
-.sampleRate (frecuencia de muestreo del buffer)
-.query (Obtener con un solo comando el número de buffer, el número de muestras y canales, y la frecuencia de muestreo)
-*/
-
-~miau.duration;
-~miau.numFrames;
-~miau.bufnum;
-~miau.numChannels;
-~miau.sampleRate;
-~miau.query;
+~aves.duration;
+~aves.bufnum;
+~aves.numFrames;
+~aves.numChannels;
+~aves.sampleRate;
+~aves.query;
+~aves.plot;
+~aves.play;
+~aves.free; //(Después de ejecutar esto es necesario volver a cargar el buffer)
 
 /*
-Podemos decidir cargar un archivo a la vez pero muchas veces quisiéramos poder trabajar con una colección de audios. Esto se puede lograr utoilizando la clase SoundFile.collectIntoBuffers de la siguiente manera:
+Para cargar una carpeta entera de audio el proceso es similar.
 
-Primero definimos la ruta de una carpeta
+Primero definimos la ruta de la carpeta. Terminamos su dirección con un "*"
 */
 
-~rutaCarpeta = thisProcess.nowExecutingPath.dirname ++ "/sonidos/*";
+~rutaCarpeta = thisProcess.nowExecutingPath.dirname +/+ "media" +/+ "sonidos" +/+ "*";
 
-//Insertamos la ruta en la clase SoundFile.collectIntoBuffers
+/*
+Después utilizaremos la clase SoundFile y el método .collectIntoBuffers. Los argumentos de este método son:
+path: la ruta de la carpeta
+server: el servidor en donde se alojarán estos buffers.
+
+También agregaremos una variable global con la cuál hacer referencia a esta carpeta
+*/
+
 ~carpetaSonidos = SoundFile.collectIntoBuffers(~rutaCarpeta,s);
 
-//Se crea un array en la variable ~carpetaSonidos. Para referenciar un sonido se usa su índice entre corchetes
-~carpetaSonidos[2].play;
+//Después de este proceso obtendremos un arreglo en la variable ~carpetaSonidos. Para referenciar un sonido se usa su índice entre corchetes. Una referencia de este tipo responde a los mismos métodos listados arriba (.query, .play, .sampleRate, etc.)
+~carpetaSonidos[3].play;
+~carpetaSonidos[3].query;
+~carpetaSonidos.size;
 
+//Una vez almacenados los buffers existen dos clases de SuperCollider capaces de reproducirlo: PlayBuf y BufRd. Veamos ambas:
 
-/*Finalmente pasamos a la creación de un SynthDef que reproduzca el Buffer, en él, utilizaremos el objeto PlayBuff para reproducir el archivo. Los argumentos de playBuf son:
-numChannels = Número de canales del buffer a leer (este argumento no es modulable, por lo que hay que tenerlo claro desde el principio)
-bufnum = Número de buffer a utilizar (lo llamamos con ~miau.bufnum)
-rate = Velocidad de reproducción (se pueden usar valores negativos para reproducir en reversa)
-trigger = Una señal que al activarse provoque el reinicio de la reproducción
-startPos =  En qué muestra se comenzará a reproducir el Buffer
-loop =  0 = reproducción en loop activada, 1 = reproducción en loop desactivada
-doneAction = acción a realizarse con el sintetizador cuando el buffer termine de reproducirse
+/*
+1) PlayBuf
+La clase PlayBuff posee los siguientes argumentos:
+
+numChannels: Número de canales del buffer a leer
+bufnum = Número de buffer a utilizar (lo llamamos con .bufnum)
+rate: Velocidad de reproducción (se pueden usar valores negativos para reproducir en reversa)
+trigger: Una señal que al activarse provoque el reinicio de la reproducción
+startPos:  En qué muestra se comenzará a reproducir el Buffer
+loop:  0 = reproducción en loop activada, 1 = reproducción en loop desactivada
+doneAction: acción a realizarse con el nodo cuando el buffer termine de reproducirse
 */
 
+/*
+Antes de implementar PlayBuf en una definición de síntesis conviene hacer un pequeño paréntesis referente a la frecuencia de muestreo.
+
+Cuando cargamos un archivo de audio en un buffer, este conserva su frecuencia de muestreo original, la cual puede ser distinta a la frecuencia de muestreo con la que corre nuestro servidor.
+
+El servidor reproduce el buffer muestra por muestra al ritmo de su propio reloj interno. Si las frecuencias no coinciden, el archivo se reproducirá más rápido o más lento de lo esperado, modificando su altura.
+
+Para prevenir o corregir este desfase, existe el generador de unidades llamado BufRateScale, el cual calcula
+automáticamente la proporción entre ambas frecuencias con la operación:
+
+frecuencia de muestreo del Buffer / frecuencia de muestreo del servidor
+
+Al utilizar esta proporción en el argumnento "rate" de PlayBuf, garantizamos que el archivo se reproduzca a la velocidad y altura correctas, sin importar con qué frecuencia de muestreo fue grabado originalmente.
+*/
+
+//Sin BufRateScale
+~carpetaSonidos[8].sampleRate;
 (
-SynthDef(\reproduccion,{
-	arg bufnum = 0, rate = 1, loop = 0, amp = 0.6, pos = 0, t_trig = 0;
-	var sig, env, scale, startPos;
+{
+	var bufnum = ~carpetaSonidos[8].bufnum; PlayBuf.ar(2,bufnum,doneAction: 2);
+}.play
+)
 
-	scale = BufRateScale.kr(~miau); //Con esta línea nos aseguramos que la frecuencia de muestreo de nuestro audio coincida con la de nuestro proyecto
-	startPos = BufFrames.kr(bufnum) * pos;
+//Con BufRateScale
+(
+{
+	var bufnum = ~carpetaSonidos[8].bufnum; PlayBuf.ar(2,bufnum,BufRateScale.ir(bufnum),doneAction: 2);
+}.play
+)
 
-	sig = PlayBuf.ar(numChannels: 2, bufnum: bufnum, rate: scale * rate, trigger: t_trig, startPos: startPos, loop: loop, doneAction: 2);
+//Integremos PlayBuf a una definición de síntesis:
+(
+SynthDef(\reproductor,{
+	arg bufnum = 0, rate = 1, t_trig = -1,  posIn = 0, loop = 0, rel = 1, gate = 1, amp = 0.6;
+	var proporcion, sig, env;
 
-	sig = sig * amp;
+	proporcion = BufRateScale.ir(bufnum);
+
+	sig = PlayBuf.ar(
+		numChannels: 2,
+		bufnum: bufnum,
+		rate: proporcion * rate,
+		trigger: t_trig,
+		startPos: BufFrames.ir(bufnum) * posIn,
+		loop: loop,
+		doneAction: 2);
+
+	env = EnvGen.ar(
+		envelope: Env.asr(
+			sustainLevel: 0.6,
+			releaseTime: rel),
+		gate: gate,
+		doneAction: 2
+	);
+
+	sig = sig * env * amp;
 
 	Out.ar(0, sig);
 }).add;
 )
+//Ahora probemos usar esta definición de síntesis para reproducir diferentes buffers.
+(
+~cantoR = Synth(\reproductor,
+	[
+		\bufnum, ~carpetaSonidos[0].bufnum,
+		\posIn, 0
+	]
+);
+)
 
+~cantoR.set(\t_trig, 1);
+~cantoR.set(\rel, 0.2, \gate, 0);
 
-~miauP = Synth(\reproduccion, [\bufnum, ~carpetaSonidos[0].bufnum , \pos, 0.8]); //Reproducir una vez (especificar buffer y posición de inicio (del 0 al 1))
-~miauP = Synth(\reproduccion,[\loop, 1, \bufnum, ~carpetaSonidos[4].bufnum]); //Reproducir enn loop (especificar buffer)
-~miauP.set(\t_trig, 1); //Reiniciar el sonido con un trigger
-~miauP.set(\rate, 0.6,\amp, 0.4); //Ajustar parámetros de rate y amplitud
-~miauP.set(\loop, 0); //Detener el loop (detiene el sintetizador en cuanto acaba el sonido)
+(
+~gallinaR = Synth(\reproductor,
+	[
+		\loop, 1,
+		\bufnum, ~carpetaSonidos[1].bufnum
+	]
+);
+)
+
+~gallinaR.set(\amp,1);
+~gallinaR.set(\t_trig,1);
+~gallinaR.set(\rel, 3, \gate, 0);
+
+(
+~miauR = Synth(\reproductor,
+	[
+		\loop, 1,
+		\bufnum, ~carpetaSonidos[6].bufnum
+	]
+);
+)
+
+~miauR.set(\amp,1);
+~miauR.set(\rate,-1);
+~miauR.set(\gate,0);
 
 
 //Agregar
