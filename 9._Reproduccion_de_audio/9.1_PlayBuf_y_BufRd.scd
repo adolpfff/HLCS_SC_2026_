@@ -5,7 +5,7 @@ Dentro de SC es posible reproducir y manipular archivos de audio en formato .wav
 
 Para hacer esto, primero es necesario almacenar nuestro archivo de audio en un buffer.
 
-Un buffer es un espacio en la memoria del servidor en donde podemos almacenar información y recuperarla rápidamente. Los Buffers se almacenan en forma de arrays, así que cualquier cosa que se pueda representar como una secuencia de números puede vivir ahí. Lo más común es usarlo para almacenar archivos de audio pero también puede almacenar datos como wavetables y datasets.
+Un buffer es un espacio en la memoria del servidor en donde podemos almacenar información y recuperarla rápidamente. Los Buffers se almacenan en forma de arrays, así que cualquier cosa que pueda representarse como una secuencia de números puede vivir ahí. Lo más común es usarlo para almacenar archivos de audio pero también puede almacenar datos como wavetables y datasets.
 
 Para almacenar un audio en un buffer usamos la clase Buffer y el método .read. Analicemos sus argumentos:
 
@@ -52,22 +52,87 @@ dirname devuelve el directorio que contiene al archivo
 Buffer.read(server: s, path: ~ruta);
 
 //Definiremos el frame de inicio como 0 si queremos leer el archivo desde el principio
-Buffer.read(server: s, path: ~ruta, startFrame: 0);
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: 0)
+)
 
-//Definiremos numFrames como -1 si queremos leer todos los frames del archivo
-Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: -1);
+//También podemos hacer la conversión de frames a segundos multiplicando el sampleRate de nuestro archivo por los segundos que deseemos.
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: 44100 * 0.5)
+)
 
-//O podemos hacer el cálculo de los segundos que querramos con la fórmula: rate de nuestro buffer * segundos
-Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5);
+//La frecuencia de muestreo la obtendremos con ayuda del navegador de archivos de nuestra computadora o con ayuda de la clase SoundFile y los métodos .openRead y .sampleRate.
 
-//Agregar una función que se ejecute al terminar de cargar el buffer es opcional (aunque útil en algunas ocasiones)
-Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln});
+SoundFile.openRead(~ruta).sampleRate;
 
-//SuperCollider asigna un número de buffer automáticamente, aunque también podemos definirlo manualmente
-Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln}, bufnum: 0);
+//Podemos usar esta clase diréctamente como argumento de Buffer
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5)
+)
 
-//Finalmente lo almacenamos en una variable para poder hacer referencias posteriores a este buffer en específico.
-~aves = Buffer.read(server: s, path: ~ruta, startFrame: 0, numFrames: 44100 * 1.5, action: {"Buffer cargado correctamente".postln}, bufnum: 0);
+//Posteriormente definiremos numFrames como -1 si queremos leer todos los frames del archivo
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5,
+	numFrames: -1
+);
+)
+
+//O nuevamente podremos hacer el cálculo de los segundos que querramos con la fórmula: rate de nuestro buffer * segundos
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5,
+	numFrames: SoundFile.openRead(~ruta).sampleRate * 1.33,
+);
+)
+
+//El siguiente argumento de Buffer consiste en una función que se ejecutará al terminar de cargar el buffer en el servidor. Es opcional (aunque útil en algunas ocasiones)
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5,
+	numFrames: SoundFile.openRead(~ruta).sampleRate * 1.33,
+	action: {"Buffer cargado correctamente".postln}
+);
+)
+
+//SuperCollider asigna un número de buffer automáticamente, aunque también podemos definirlo manualmente.
+(
+Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5,
+	numFrames: SoundFile.openRead(~ruta).sampleRate * 1.33,
+	action: {"Buffer cargado correctamente".postln},
+	bufnum: 0
+);
+)
+
+//Finalmente, almacenamos en una variable para poder hacer referencias posteriores a este buffer en específico.
+(
+~aves = Buffer.read(
+	server: s,
+	path: ~ruta,
+	startFrame: SoundFile.openRead(~ruta).sampleRate * 0.5,
+	numFrames: SoundFile.openRead(~ruta).sampleRate * 1.33,
+	action: {"Buffer cargado correctamente".postln},
+	bufnum: 0
+);
+)
 
 /*
 Una vez cargado y almacenado en una variable, el buffer responde a los métodos:
@@ -79,18 +144,16 @@ Una vez cargado y almacenado en una variable, el buffer responde a los métodos:
 .query (número de buffer, número de muestras, número de canales y frecuencia de muestreo)
 .plot (visualizar el buffer)
 .play (reproducir el buffer)
-.free (liberar el buffer)
 */
 
 ~aves.duration;
 ~aves.bufnum;
+~aves.sampleRate;
 ~aves.numFrames;
 ~aves.numChannels;
-~aves.sampleRate;
 ~aves.query;
 ~aves.plot;
 ~aves.play;
-~aves.free; //(Después de ejecutar esto es necesario volver a cargar el buffer)
 
 /*
 Para cargar una carpeta entera de audio el proceso es similar.
@@ -115,7 +178,7 @@ También agregaremos una variable global con la cuál hacer referencia a esta ca
 ~carpetaSonidos[3].query;
 ~carpetaSonidos.size;
 
-//Una vez almacenados los buffers existen dos clases de SuperCollider capaces de reproducirlo: PlayBuf y BufRd. Veamos ambas:
+//Una vez almacenados los buffers en el servidor, existen dos clases de SuperCollider capaces de reproducirlo: PlayBuf y BufRd. Veamos ambas:
 
 /*
 1) PlayBuf
@@ -145,18 +208,26 @@ frecuencia de muestreo del Buffer / frecuencia de muestreo del servidor
 Al utilizar esta proporción en el argumnento "rate" de PlayBuf, garantizamos que el archivo se reproduzca a la velocidad y altura correctas, sin importar con qué frecuencia de muestreo fue grabado originalmente.
 */
 
-//Sin BufRateScale
 ~carpetaSonidos[8].sampleRate;
+
+//Sin BufRateScale
 (
 {
-	var bufnum = ~carpetaSonidos[8].bufnum; PlayBuf.ar(2,bufnum,doneAction: 2);
+	PlayBuf.ar(
+		numChannels: 2,
+		bufnum: ~carpetaSonidos[8].bufnum,
+		doneAction: 2);
 }.play
 )
 
 //Con BufRateScale
 (
-{
-	var bufnum = ~carpetaSonidos[8].bufnum; PlayBuf.ar(2,bufnum,BufRateScale.ir(bufnum),doneAction: 2);
+{   var bufnum = ~carpetaSonidos[8].bufnum;
+	PlayBuf.ar(
+		numChannels: 2,
+		bufnum: ~carpetaSonidos[8].bufnum,
+		rate: BufRateScale.ir(bufnum),
+		doneAction: 2);
 }.play
 )
 
@@ -201,7 +272,7 @@ SynthDef(\reproductor,{
 )
 
 ~cantoR.set(\t_trig, 1);
-~cantoR.set(\rel, 0.2, \gate, 0);
+~cantoR.set(\rel, 3, \gate, 0);
 
 (
 ~gallinaR = Synth(\reproductor,
@@ -229,6 +300,95 @@ SynthDef(\reproductor,{
 ~miauR.set(\rate,-1);
 ~miauR.set(\gate,0);
 
+/*
+2) BufRd
+La siguiente clase que podemos usar para reproducir audio es BufRd.
 
-//Agregar
-BufRd.ar();
+BufRd es un lector de buffers que necesita que especifiquemos un cursor de reproducción, el cuál indicará a BufRd qué muestra leer en cada momento. Este cursor se especifica en el argumento "phase".
+
+Para generar este cursor podemos utilizar Line o Phasor.
+
+Line creará un cursor con un punto de inicio y uno de final.
+
+*/
+(
+{
+var bufnum = ~carpetaSonidos[4].bufnum;
+
+	BufRd.ar(
+		numChannels: 2,
+		bufnum: bufnum,
+		phase: Line.ar(
+			start: 0,
+			end: BufFrames.ir(bufnum),
+			dur: BufDur.ir(bufnum),
+			doneAction: 2)
+	)
+}.play;
+)
+
+//El mismo proceso de trayectoria entre dos puntos con el argumento loop = 1 puede realizarse con un Phasor: una rampa que conecta dos valores en determinado tiempo pero al alcanzar al último, se reinicia.
+(
+~ladrido = {
+	arg rate = 1;
+	var bufnum, proporcion;
+
+	bufnum = ~carpetaSonidos[4].bufnum;
+	proporcion = BufRateScale.ir(bufnum);
+
+	BufRd.ar(
+		numChannels: 2,
+		bufnum: bufnum,
+		phase: Phasor.ar(
+			rate: proporcion * rate,
+			start: 0,
+			end: BufFrames.ir(bufnum)
+		),
+		loop: 1
+	)
+}.play;
+)
+
+~ladrido.set(\rate, -1000);
+~ladrido.release(3);
+
+//La ventaja de BufRd es que podemos utilizar distintos generadores de unidades para controlar la fase, no necesariamente Line o Phasor
+(
+~ladrido = {
+	arg rate = 1, freq = 1;
+	var bufnum, proporcion;
+
+	bufnum = ~carpetaSonidos[4].bufnum;
+	proporcion = BufRateScale.ir(bufnum);
+
+	BufRd.ar(
+		numChannels: 2,
+		bufnum: bufnum,
+		phase: SinOsc.ar(freq).range(0,BufFrames.ir(bufnum)),
+		loop: 1
+	)
+}.play;
+)
+
+~ladrido.set(\freq,5);
+
+/*
+Notas finales:
+
+El mayor número de buffers que podemos almacenar en el servidor son 1024. La mayoría del tiempo son suficientes si los administramos correctamente. Si quisiéramos utilizar un número de buffers máximos diferente, podemos cambiarlo en las configuraciones del servidor.
+*/
+
+s.options.dump; //Visualizar todas las configuraciones del servidor
+
+s.options.numBuffers; //Visualizar el número de Buffers máximos establecido.
+
+s.options.numBuffers = 333;//Establecer un nuevo número
+
+s.reboot; //Reiniciar el servidor
+
+//Para administrar mejor nuestros recursos, es útil liberar ciertos buffers en el servidor con el método .free
+~aves.free;
+
+//O liberarlos todos sin distinción
+Buffer.freeAll;
+
