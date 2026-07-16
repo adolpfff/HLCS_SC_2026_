@@ -344,6 +344,14 @@ rq: Factor de calidad. Indice que refiere a la proporción entre la frecuencia c
 
 {WhiteNoise.ar(0.1)}.scope;
 
+(
+{
+	var noise;
+	noise = LFNoise0.ar(100);
+	[noise, LPF.ar(noise, 2)]
+}.plot(1);
+)
+
 //LPF : Low Pass Filter ó Fitro Pasa Graves.
 //Reduce la amplitud de todas las frecuencias por encima de la frecuencia de corte.
 
