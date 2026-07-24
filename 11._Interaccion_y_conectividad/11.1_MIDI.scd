@@ -75,11 +75,12 @@ Veamos ambas posibilidades:
 Para conectar todos los dispositivos usaremos el método .connectAll.
 */
 
+MIDIIn.connectAll;
 //Para conectar selectivamente un dispositivo, usaremos su índice dentro del arreglo de MIDIClient.sources
 MIDIClient.sources;
-MIDIClient.sources.at(2);
+MIDIClient.sources.at(3);
 MIDIClient.sources[1]; //Sintaxis
-MIDIIn.connect(device: MIDIClient.sources[1]);
+MIDIIn.connect(device: MIDIClient.sources[4]);
 
 //Una vez conectado algun dispositivo podemos comprobar y monitorear si estamos recibiendo mensajes MIDI:
 MIDIFunc.trace(true); //Activa la impresión de los datos MIDI recibidos en la ventana de posteo.
