@@ -315,7 +315,7 @@ SynthDef(\fx,{ //SynthDef para efectos.
 );
 )
 
-~q = ~p.play; //guardamos en ~q la reproducción.
+~q = ~p.play(~tempo); //guardamos en ~q la reproducción.
 
 ~fxNode.set(\amp, 0.1, \room, 4, \rev, 1.5) //podemos modificar algunos argumentos del synth de efectos.
 ~tempo.tempo = 60/60; //podemos modificar el tempo.
@@ -355,21 +355,18 @@ s.newBusAllocators;
 ~tempo = TempoClock.new; //un Tempo
 
 SynthDef(\fmB, {
-	arg fc1 = 110, fc2 = 150, fm1 = 2, fm2 = 3, mi1 = 3, mi2 = 5, amp = 0.5, atk = 0.1, rel = 1, bus = 0;
-	var car1, car2, mod1, mod2, env, sig;
+	arg fc1 = 110, fc2 = 150, fm1 = 2, mi1 = 3, amp = 0.5, atk = 0.1, rel = 1, bus = 0;
+	var car1, car2, mod1, env, sig;
 
 	env = EnvGen.ar(Env.perc(atk,rel),doneAction: 2); //envolvente de amplitud.
 
 	fm1 = fc1 * fm1; //frecuencia moduladora 1 relacionada a la portadora 1
-	fm2 = fc2 * fm2; //frecuencia moduladora 2 relacionada a la portadora 2
 	mi1 = fm1 * mi1; //Indice de modulación 1 relacionado a la frecuencia moduladora 1
-	mi2 = fm2 * mi2; //Indice de modulación 2 relacionado a la frecuencia moduladora 2
 
 	mod1 = SinOsc.ar(fm1) * mi1; //modulador 1
-	mod2 = SinOsc.ar(fm2) * mi2; //modulador 2
 
 	car1 = SinOsc.ar(fc1 + mod1); //portador 1
-	car2 = SinOsc.ar(fc2 + mod2); //portador 2
+	car2 = SinOsc.ar(fc2 + mod1); //portador 2
 
 	sig = car1 + car2; //suma de señales.
 	sig = sig * amp * env; //Aplicación de envolvente y factor de amplitud.
@@ -379,19 +376,109 @@ SynthDef(\fmB, {
 }).add;
 
 //Podemos probar el Synth con el siguiente bloque.
-(
+/*(
 Synth(
 	defName: \fmB,
 	args: [
 		\fc1, 110, \fc2, 112,
-		\fm1, 2,\fm2, 3,
-		\mi1, 3, \mi2, 5,
+		\fm1, 4,
+		\mi1, 1,
 		\atk, 0.1, \rel, 1,
 		\amp, 0.5,
 		\bus, ~fxBus,
 	],
 	target: ~grp
 )
+);*/
+
+///////////////////////////////////////////fx
+
+SynthDef(\fx,{ //SynthDef para efectos.
+	arg in, delTime = 0.3, decayTime = 1, amp = 0.1;
+	var sig;
+	sig = In.ar(in,2) * amp;
+	sig = CombC.ar(sig, 1, delTime, decayTime);
+	Out.ar(0,sig);
+}).add;
+
+~fxNode = Synth(
+	\fx,
+	args:[\in, ~fxBus],
+	target: ~fxGrp
 );
 
+~p = Pbind(
+	\instrument, \fmB,
+	\group, ~grp,
+	\dur, Plprand(0.01,3).round(1/16),
+
+	\fc1, Pseq([60,62,64,67,69].midicps,inf) * Prand([1,0.5,2],inf),
+	\fc2, Pshuf([60,62,64,67,69].midicps,inf) * Prand([1,0.5,2],inf),
+	\fm1, Prand([2,3,5,7,11],inf),
+	\mi1, Pwhite(1,10),
+	//
+	\amp, Pxrand([0,-3,-6,-12].dbamp,inf),
+	\atk, 0.1,
+	\rel, Pkey(\dur),
+	\bus, ~fxBus
+);
 )
+
+~q = ~p.play(~tempo);
+
+~fxNode.set(\amp, 0.1, \delayTime, 0.5, \decayTime, 2) //podemos modificar algunos argumentos del synth de efectos.
+~tempo.tempo = 20/60; //podemos modificar el tempo.
+~q.stop; //detenemos la reproducción.
+
+
+// 3. Un portador con moduladores en paralelo.
+(PathName.new(thisProcess.nowExecutingPath).parentPath +/+ "media/car_mod_par.png").openOS;
+
+(
+SynthDef(\fmC, {
+	|
+	fc1 = 110,
+	fm1 = 2, fm2 = 2,
+	mi1 = 3, mi2 = 3,
+	amp = 0.5, atk = 0.1, rel = 1, bus = 0
+	|
+	var car1, mod1, mod2, env, sig;
+
+	env = EnvGen.ar(Env.perc(atk,rel),doneAction: 2); //envolvente de amplitud.
+
+	fm1 = fc1 * fm1;
+	fm2 = fc1 * fm2;
+	mi1 = fm1 * mi1;
+	mi2 = fm2 * mi2;
+
+	mod1 = SinOsc.ar(fm1) * mi1; //modulador 1
+	mod2 = SinOsc.ar(fm2) * mi2; //modulador 2
+
+	car1 = SinOsc.ar(fc1 + mod1 + mod2); //portador 1
+
+	sig = car1;
+
+	sig = sig * amp * env; //Aplicación de envolvente y factor de amplitud.
+
+	Out.ar(0,sig!2 * -6.dbamp); //Envío a la salida principal
+	Out.ar(bus, sig!2); //Envío a la salida de efectos.
+}).add;
+
+~p = Pbind(
+	\instrument, \fmC,
+	/*\group, ~grp,*/
+	\dur, 1/16,
+	\fc1, Pseq([60,62,64,67,69].midicps,inf),
+	\fm1, Prand([2,3,5,7,11],inf),
+	\fm2, Prand([2,3,5,7,11],inf),
+	\mi1, Pwhite(1,10),
+	\mi2, Pwhite(1,10),
+	//
+	\amp, Pxrand([0,-3,-6,-12].dbamp,inf),
+	\atk, 0.01,
+	\rel, Pkey(\dur),
+	/*\bus, ~fxBus*/
+);
+)
+
+~q = ~p.play;
