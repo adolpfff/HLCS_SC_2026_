@@ -1,11 +1,74 @@
 /*
-COMUNICACIÓN MIDI EN SC
+COMUNICACIÓN OSC EN SC
 
-MIDI (Musical Instrument Digital Interface o Interfaz Digital de Instrumentos Musicales, en español) es un protocolo que permite la comunicación entre instrumentos musicales electrónicos, computadoras y otros dispositivos relacionados.
+Open Sound Control (OSC) es una especificación de comunicación entre aplicaciones y/o hadware. Fue publicado en 2002 y está diseñado para cumplir los mismos propósitos de MIDI con mayor flexibilidad y personalización. Está optimizado para protocolos modernos de transmisión de datos en redes.
 
-Fue publicado en 1983 y desde entonces tuvo muy rápida aceptación en el mundo musical y de audio digital. Actualmente MIDI es ya un estándar de comunicación para recibir y mandar datos sencillos en general. Se encuentra disponible en prácticamente cualquier DAW o lenguaje de programación de audio moderno.
+En luagar de mensajes preconfigurados como noteOn, noteOff, control, etc. OSC utiliza una dirección OSC personalizable con una sintaxis similar a la de una URL. En seguida, se encuentran los datos comunicables separados por una coma.
 
-Un mensaje midi se compone de información en código binario. Cada digito binario es llamado bit. 8 bits conforman un byte. Un mensaje MIDI se compone de 8 bytes.
+Ej. ['/osciladores/sierra', 220, 220.2313343, 221.05]
+
+*/
+
+/*
+OSC es de hecho, el lenguaje de comunicación entre sclang y scsynth.
+
+Para imprimir los mensjaes OSC enviados y recibidos por el servidor usamos:
+s.dumpOSC(1);
+
+Para enviar directamente mensajes osc al servidor usamos el método sendMsg
+
+s.sendMsg("/quit");
+s.sendMsg("/dumpOSC",1);
+s.sendMsg("/n_run",1009,1);
+s.sendMsg("/n_free",1009);
+
+Una lista útil de comandos OSC del servidor puede consultarse en el archivo de ayuda:
+
+Server Command Reference
+*/
+
+/*
+Para recibir mensajes de otr dispositivo, la opción más práctica es tener ambos dispositivos conectados a la misma red local.
+
+Para hacerlo, el remitente necesita la dirección IP local asignada a nuestra computadora y el puerto receptor del destinatario.
+
+Podemos consultar nuestra dirección IP local y el puerto en el cuál está escuchando SC los mensajes OSC externos con las línea de código:
+*/
+
+NetAddr.localIP;
+NetAddr.localAddr.postln;
+
+NetAddr.port
+
+NetAddr.localIPs('ipv4');
+
+s.options.port
+OSCFunc.trace(true);
+
+thisProcess.openUDPPort(8000);
+
+OSCdef(\osc,{arg msg; msg.postln},'/freq',recvPort: 8000);
+
+
+~miIP = NetAddr.localIP("192.168.1.1");
+
+
+
+
+
+
+
+s.dumpOSC(0);
+3x8
+
+{SinOsc.ar(mul: 0.3)}.play;
+
+
+
+
+
+
+
 */
 
 //Estructura de un mensaje MIDI:
@@ -74,6 +137,7 @@ Veamos ambas posibilidades:
 1) Recibir mensajes MIDI
 Para conectar todos los dispositivos usaremos el método .connectAll.
 */
+
 MIDIIn.connectAll;
 //Para conectar selectivamente un dispositivo, usaremos su índice dentro del arreglo de MIDIClient.sources
 MIDIClient.sources;
@@ -229,7 +293,7 @@ Opcionalmente también se puede asignar un valor por default
 ~freqMod.set(5);
 
 
-//Procedemos a modificar el sintetizador para aceptar buses de control con la classe In.kr
+//Procedemos a moificar el sintetizador para aceptar buses de control con la classe In.kr
 
 (
 SynthDef(\phonk, {
@@ -286,32 +350,13 @@ MIDIdef.cc(\note, { |val| ("Nota MIDI ").post; ~note.value_(val.linlin(0,127,36,
 
 MIDIdef.cc(\freqMod, { |val| ("Frecuencia de modulación ").post; ~freqMod.value_(val.linlin(0,127,0,20).asInteger.postln)},ccNum: 18, chan: 0);
 
+.set
+Spec
+ControlSpec
+
+
 //////////////////////////////MAPEO DE NOTAS MIDI /////////////////////
 //Para mapear las notas de un controlador a notas MIDI, usaremos un sintetizador adaptado y la clase MIDIdef.noteOn y MIDIdef.noteOff
-
-//Veamos a detalle el metodo .noteOn
-(
-MIDIdef.noteOn(
-	key: \ejemplo,
-	func: {
-		arg val,num,chan,src; //Las funciones de MIDIdef consideran 4 argumentos por defecto: Valor MIDI, Numero MIDI, Canal MIDI y Fuente o Source. (Un identificador del equipo que manda el mensaje).
-		[val,num,chan,src].postln;
-		("Mandaste una nota con valor" + val + "y corresponde al numero MIDI" + num).postln;
-});
-)
-
-//noteOff
-(
-MIDIdef.noteOff(
-	key: \ejemploff,
-	func: {
-		arg val, num, chan, src;
-		[val,num, chan, src].postln; //En este caso, el mensaje se manda ya que se liberó la nota en el controlador.
-		("Liberaste una nota en la posición" + num).postln;
-	}
-)
-)
-
 
 (
 SynthDef(\phonk, {
@@ -343,118 +388,16 @@ SynthDef(\phonk, {
 }).add
 )
 
-//Para este ejemplo declararemos un array de 128 posiciones que se encuentre vacio dentro de ~phonkP.
 ~phonkP = Array.newClear(128);
 
-//Esto nos va a permitir definir un lugar ordenado donde almacenar los Nodos de cada nota para posteriormente invocarlos.
+MIDIdef.noteOn(\notesOn, {|val, num| ~phonkP[num] = Synth(\phonk,[\midiNote, num, \amp, val.linlin(0,127,0.1,0.8)])});
 
-(
-MIDIdef.noteOn( //Definimos una función MIDI que se active con mensajes de noteOn. (1001)
-	key: \notesOn, //identifiador de la funcion.
-	func: {
-		|val, num| //La función considera 4 argumentos por defecto: [Valor, Numero MIDI, Canal MIDI, Fuente];
-		~phonkP[num] = Synth( //Guardamos la ejecución del Synth(\phonk) en la posición del arreglo con la que coincide el numero MIDI.
-			\phonk,
-			[
-				\midiNote, num, //Utilizamos la información del num para determinar la nota en formato MIDI.
-				\amp, val.linlin(0,127,0.1,0.8) //Val en este caso nos indica la amplitud del Synth.
-			]
-		)
-	}
-);
-)
-
-//Para poder comunicar que queremos liberar el sonido del nodo que creamos previamente utiliazmos mensajes MIDI de noteOff (1000).
-//Este mensaje se activa al liberar la nota del controlador.
-
-(
-MIDIdef.noteOff( //Definimos una función MIDI que se activa ahora con note off;
-	key: \notesOff,
-	func: {
-		|val, num| //Nuevamente utilizamos los argumentos que ofrece por defecto la función en MIDIdef [val, num, chan, src].
-		~phonkP[num].set(\gate,0);  //Ubicamos el Synth que queremos desactivar en el arreglo a travez del numero MIDI. y de aplicamos el metodo .set(\gate, 0) para indicarle a la envolvente que se desactive.
-		~phonkP[num] = nil //Como último paso, restauramos el valor de nil que existía originalmente en el arreglo.
-	}
-);
-)
-
-//MIDI Out
-//Asi como es posible ingresar mensajes MIDI a SC desde un controlador, un sintetizador u otras plataformas de trabajo con audio. Tambien es posible crear mensajes MIDI desde SC para comunicarse con otros dispositivos.
-
-//Para ello empleamos la clase MIDIOut
-MIDIOut.new;
-
-//Consiste en un puerto o "destino" el cual nosotros definimos para establecer comunicación.
-//Si queremos conocer los destinos disponibles podemos utilizar el siguiente comando:
-
-MIDIClient.destinations;
-
-//Al igual que el metodo anterior podemos definir una conección al indicar el indice al que corresponde en el arreglo de destinos.
-~midiOut = MIDIOut.new(0);
-
-//Una opción mas confiable es definir la conexión por nombre del dispositivo.
-~midiOut = MIDIOut.newByName("Driver IAC", "Bus 1");
-
-//Hay varios metodos con los cuales podemos mandar información MIDI.
-/*Los mas importantes son:
-.noteOn(chan, note, vel). //Mensajes de noteOn
-.noteOff(chan, note, vel); //Mensajes de noteOff
-.control(chan, ctlNum, vel) //Mensajes de control.
-
-.allNotesOff //Mensaje que apaga todas las notas que pudieran estar atoradas. Es muy util!
-*/
-~midiOut.noteOn(0,84,64);
-~midiOut.noteOff(0,84,64);
-
-~midiOut.control(0,1,10);
-
-~midiOut.allNotesOff(0);
+MIDIdef.noteOff(\notesOff, {|val, num| ~phonkP[num].set(\gate,0); ~phonkP[num] = nil});
 
 
-//Podemos emplear una rutina para mandar información MIDI.
-(
-~r = Routine({
-	var midi;
-	[60,62,64,66,68,72].do({
-		arg it, in;
 
-		~midiOut.noteOn(0,it,127);
-		1.wait;
 
-		~midiOut.noteOff(0,it,127);
-	});
-	~midiOut.allNotesOff(0);
-});
-~r.play;
-);
 
-//Una alternativa es utilizar el tipo de evento MIDI en el entorno de los patrones.
-HelpBrowser.openHelpFor("Event types");
-HelpBrowser.openHelpFor("Pattern Guide 08: Event Types and Parameters");
-HelpBrowser.openHelpFor("Pattern Guide Cookbook 04: Sending MIDI");
+A Function or similar object which will respond to the incoming message. When evaluated for noteOn, noteOff, control, and polytouch messages it will be passed the arguments val, num, chan, and src, corresponding to the message value (e.g. velocity, control value, etc.), message number (e.g. note number), MIDI channel, and MIDI source uid. For touch, program change and bend messages it will be passed only val, chan, and src. For information on the args passed for the other sorts of msgType see the convenience methods below.
 
-(
-Pbind(
-	\type, \midi,
-	\midicmd, \noteOn,
-	\midiout, ~midiOut,
-	\chan, 0,
-	\dur, 1,
-	\midinote, Pseq([60,62,64,66,68,70,72],inf)
-).play;
-)
 
-n = NetAddr("localhost", 12345);
-n = s.addr;
-~net = NetAddr.new("172.17.73.80",8000);
-(
-{
-	inf.do{
-		~net.sendMsg(\freq,200).postln;
-	1.wait;
-	}
-
-}.fork;
-)
-OSCdef.new(\)
-NetAddr.localAddr_(123456)
