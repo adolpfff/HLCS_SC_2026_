@@ -225,82 +225,106 @@ FreqScope.new;
 */
 
 //1.Aditivo de portadores con moduladores independientes.
-
+(PathName.new(thisProcess.nowExecutingPath).parentPath +/+ "media/add_car_mod_in.png").openOS;
 
 (
 s.newBusAllocators;
 
-~grp = Group.new;
-~fxGrp = Group.after(~grp);
+~grp = Group.new; //Grupo de fuentes sonoras.
+~fxGrp = Group.after(~grp); //Grupo de efectos.
 
-~fxBus = Bus.audio(s,2);
+~fxBus = Bus.audio(s,2); //bus de ruteo para conectar fuentes con efectos,
 
-~tempo = TempoClock.new;
+~tempo = TempoClock.new; //un Tempo
 
-SynthDef(\fm, {
-	arg fc1, fc2, fm1, fm2, mi1, mi2, amp, atk, rel, bus;
+SynthDef(\fmA, {
+	arg fc1 = 110, fc2 = 150, fm1 = 2, fm2 = 3, mi1 = 3, mi2 = 5, amp = 0.5, atk = 0.1, rel = 1, bus = 0;
 	var car1, car2, mod1, mod2, env, sig;
 
-	env = EnvGen.ar(Env.perc(atk,rel),doneAction: 2);
-	fm1 = fc1 * fm1;
-	fm2 = fc2 * fm2;
-	mi1 = fm1 * mi1;
-	mi2 = fm2 * mi2;
+	env = EnvGen.ar(Env.perc(atk,rel),doneAction: 2); //envolvente de amplitud.
 
-	mod1 = SinOsc.ar(fm1) * mi1;
-	mod2 = SinOsc.ar(fm2) * mi2;
+	fm1 = fc1 * fm1; //frecuencia moduladora 1 relacionada a la portadora 1
+	fm2 = fc2 * fm2; //frecuencia moduladora 2 relacionada a la portadora 2
+	mi1 = fm1 * mi1; //Indice de modulación 1 relacionado a la frecuencia moduladora 1
+	mi2 = fm2 * mi2; //Indice de modulación 2 relacionado a la frecuencia moduladora 2
 
-	car1 = SinOsc.ar(fc1 + mod1);
-	car2 = SinOsc.ar(fc2 + mod2);
+	mod1 = SinOsc.ar(fm1) * mi1; //modulador 1
+	mod2 = SinOsc.ar(fm2) * mi2; //modulador 2
 
-	sig = car1 + car2;
-	sig = sig * amp * env;
+	car1 = SinOsc.ar(fc1 + mod1); //portador 1
+	car2 = SinOsc.ar(fc2 + mod2); //portador 2
 
-	Out.ar(0,sig!2 * -6.dbamp);
-	Out.ar(bus, sig!2);
+	sig = car1 + car2; //suma de señales.
+	sig = sig * amp * env; //Aplicación de envolvente y factor de amplitud.
+
+	Out.ar(0,sig!2 * -6.dbamp); //Envío a la salida principal
+	Out.ar(bus, sig!2); //Envío a la salida de efectos.
 }).add;
 
-SynthDef(\fx,{
+//Podemos probar el Synth con el siguiente bloque.
+/*(
+Synth(
+	defName: \fmA,
+	args: [
+		\fc1, 110, \fc2, 112,
+		\fm1, 2,\fm2, 3,
+		\mi1, 3, \mi2, 5,
+		\atk, 0.1, \rel, 1,
+		\amp, 0.5,
+		\bus, ~fxBus,
+	],
+	target: ~grp
+)
+);*/
+
+///////////////////////////////////////////fx
+
+SynthDef(\fx,{ //SynthDef para efectos.
 	arg in, room = 10, rev = 3, amp = 0.33;
 	var sig;
-	sig = In.ar(in,2);
-	sig = GVerb.ar(sig, room, rev);
-	sig = sig * amp;
-	Out.ar(0,sig);
+	sig = In.ar(in,2) * amp; //Objeto in permite ingresar sonido de algun punto de SC.
+	sig = GVerb.ar(sig, room, rev); //GVerb es una reverberación.
+	Out.ar(0,sig); //Salida principal.
 }).add;
 
+//Con la siguiente linea activamos el Synth en el grupo adecuado y el bus de entrada adecuado.
 ~fxNode = Synth(
 	\fx,
 	args:[\in, ~fxBus],
 	target: ~fxGrp
 );
 
+//Controlamos el synth mediante una secuencia de eventos, con Pbind.
+
 ~p = Pbind(
-	\instrument, \fm,
-	\group, ~grp,
-	\dur, Plprand(0.01,0.5).round(1/16),
-	\fc1, Pseq([60,62,64,67,69].midicps,inf),
-	\fc2, Pshuf([60,62,64,67,69].midicps,inf) * Prand([1,0.5,2],inf),
+	\instrument, \fmA, //Invocamos al instrumento.
+	\group, ~grp, //Indicamos el grupo al cual pertenece.
+	\dur, Plprand(0.01,0.5).round(1/16), //Indicamos duración entre eventos. Plprand elige valores inferiores.
+	//
+	\fc1, Pseq([60,62,64,67,69].midicps,inf), //Secuenciamos una serie de valores ojo con .midicps
+	\fc2, Pshuf([60,62,64,67,69].midicps,inf) * Prand([1,0.5,2],inf), //multiplicamos un patron por otro.
 	\fm1, Prand([2,3,5,7,11],inf),
 	\fm2, Prand([2,3,5,7,11],inf) * Pwhite(0.9,1.1),
 	\mi1, Pwhite(1,10),
 	\mi2, Pwhite(1,10),
+	//
 	\amp, Pxrand([0,-3,-6,-12].dbamp,inf),
 	\atk, 0.01,
-	\rel, Pkey(\dur),
-	\bus, ~fxBus
+	\rel, Pkey(\dur), //el releas del envolvente es igual a la duración del evento.
+	\bus, ~fxBus //indicamos el bus para completar el ruteo al synth de efectos.
 );
 )
 
-~q = ~p.play;
+~q = ~p.play; //guardamos en ~q la reproducción.
 
-~fxNode.set(\amp, 0.1, \room, 2, \rev, 2)
-~tempo.tempo = 60/60;
-~q.stop;
+~fxNode.set(\amp, 0.1, \room, 4, \rev, 1.5) //podemos modificar algunos argumentos del synth de efectos.
+~tempo.tempo = 60/60; //podemos modificar el tempo.
+~q.stop; //detenemos la reproducción.
 
+//Con el siguiente bloque cualquier modificación que hagamos del Pbind la podemos incluir al stream.
 (
 ~q.stream = Pbind(
-	\instrument, \fm,
+	\instrument, \fmA,
 	\group, ~grp,
 	\dur, Plprand(0.01,0.5).round(1/16) * 5,
 	\fc1, Pshuf([60,62,64,67,69].midicps,inf) * 0.5,
@@ -314,4 +338,60 @@ SynthDef(\fx,{
 	\rel, Pkey(\dur) - Pkey(\atk) * 4,
 	\bus, ~fxBus,
 ).asStream;
+)
+
+
+// 2. Aditivo de portadores con un solo modulador.
+(PathName.new(thisProcess.nowExecutingPath).parentPath +/+ "media/add_car_mod.png").openOS;
+
+(
+s.newBusAllocators;
+
+~grp = Group.new; //Grupo de fuentes sonoras.
+~fxGrp = Group.after(~grp); //Grupo de efectos.
+
+~fxBus = Bus.audio(s,2); //bus de ruteo para conectar fuentes con efectos,
+
+~tempo = TempoClock.new; //un Tempo
+
+SynthDef(\fmB, {
+	arg fc1 = 110, fc2 = 150, fm1 = 2, fm2 = 3, mi1 = 3, mi2 = 5, amp = 0.5, atk = 0.1, rel = 1, bus = 0;
+	var car1, car2, mod1, mod2, env, sig;
+
+	env = EnvGen.ar(Env.perc(atk,rel),doneAction: 2); //envolvente de amplitud.
+
+	fm1 = fc1 * fm1; //frecuencia moduladora 1 relacionada a la portadora 1
+	fm2 = fc2 * fm2; //frecuencia moduladora 2 relacionada a la portadora 2
+	mi1 = fm1 * mi1; //Indice de modulación 1 relacionado a la frecuencia moduladora 1
+	mi2 = fm2 * mi2; //Indice de modulación 2 relacionado a la frecuencia moduladora 2
+
+	mod1 = SinOsc.ar(fm1) * mi1; //modulador 1
+	mod2 = SinOsc.ar(fm2) * mi2; //modulador 2
+
+	car1 = SinOsc.ar(fc1 + mod1); //portador 1
+	car2 = SinOsc.ar(fc2 + mod2); //portador 2
+
+	sig = car1 + car2; //suma de señales.
+	sig = sig * amp * env; //Aplicación de envolvente y factor de amplitud.
+
+	Out.ar(0,sig!2 * -6.dbamp); //Envío a la salida principal
+	Out.ar(bus, sig!2); //Envío a la salida de efectos.
+}).add;
+
+//Podemos probar el Synth con el siguiente bloque.
+(
+Synth(
+	defName: \fmB,
+	args: [
+		\fc1, 110, \fc2, 112,
+		\fm1, 2,\fm2, 3,
+		\mi1, 3, \mi2, 5,
+		\atk, 0.1, \rel, 1,
+		\amp, 0.5,
+		\bus, ~fxBus,
+	],
+	target: ~grp
+)
+);
+
 )
