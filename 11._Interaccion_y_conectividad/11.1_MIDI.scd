@@ -443,3 +443,18 @@ Pbind(
 	\midinote, Pseq([60,62,64,66,68,70,72],inf)
 ).play;
 )
+
+n = NetAddr("localhost", 12345);
+n = s.addr;
+~net = NetAddr.new("172.17.73.80",8000);
+(
+{
+	inf.do{
+		~net.sendMsg(\freq,200).postln;
+	1.wait;
+	}
+
+}.fork;
+)
+OSCdef.new(\)
+NetAddr.localAddr_(123456)
