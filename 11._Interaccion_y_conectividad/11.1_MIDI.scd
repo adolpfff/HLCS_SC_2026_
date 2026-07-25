@@ -5,7 +5,7 @@ MIDI (Musical Instrument Digital Interface o Interfaz Digital de Instrumentos Mu
 
 Fue publicado en 1983 y desde entonces tuvo muy rápida aceptación en el mundo musical y de audio digital. Actualmente MIDI es ya un estándar de comunicación para recibir y mandar datos sencillos en general. Se encuentra disponible en prácticamente cualquier DAW o lenguaje de programación de audio moderno.
 
-Un mensaje midi se compone de información en código binario. Cada digito binario es llamado bit. 8 bits conforman un byte. Un mensaje MIDI se compone de 8 bytes.
+Un mensaje midi se compone de información en código binario. Cada digito binario es llamado bit. 8 bits conforman un byte. Un mensaje MIDI se compone de 1, 2 o 3 bytes.
 */
 
 //Estructura de un mensaje MIDI:
@@ -30,15 +30,13 @@ Los segundos dos bytes son llamados bytes de datos y comienzan con un bit en val
 Si un bit de cada byte ya está ocupado, nos quedan 7 bits disponibles para representar valores. Si cada bit tiene dos posibles valores tenemos en total 128 combinaciones posibles para cada byte.
 */
 
-2*2*2*2*2*2*2;
-//o
 2.pow(7);
 
 //El byte de status se divide en dos: los primeros tres bits disponibles después del 1 especifican la acción
 
-2*2*2 //Número de acciones disponibles
+2.pow(3);
 
-//Las acciones disponibles más frcuentes y felixbles son:
+//Las acciones disponibles más frecuentes son:
 (
 
 var ventana, img;
@@ -53,11 +51,10 @@ ventana.front;
 );
 
 //Los segundos cuatro bits representan el canal al cual mandar los datos
-
 2.pow(4); //Número de canales disponibles para envío de información
 
-//En MIDI tenemos diferentes tipos de mensajes, los más comunes son noteOn, noteOff y control change (cc). El protocolo MIDI expresa sus parámetros en 128 valores a través de 16 canales.
-
+//Los siguientes dos bytes tienen 7 bits disponibles y se usan para diferentes cosas dependiendo el tipo de mensaje.
+2.pow(7);
 
 //Para mapear MIDI en SC primero tenemos que establecer conexión con el subsistema MIDI de nuestra computadora. Para esto usaremos la clase MIDIClient y el método .init , lo cual nos dará además una lista de los dispositivos MIDI conectados a nuestra computadora.
 MIDIClient.init;
@@ -72,13 +69,15 @@ Si lo que queremos es mandar mensajes MIDI usamos la clase MIDIOut
 Veamos ambas posibilidades:
 
 1) Recibir mensajes MIDI
+
 Para conectar todos los dispositivos usaremos el método .connectAll.
 */
 MIDIIn.connectAll;
+
 //Para conectar selectivamente un dispositivo, usaremos su índice dentro del arreglo de MIDIClient.sources
 MIDIClient.sources;
 MIDIClient.sources.at(2);
-MIDIClient.sources[1]; //Sintaxis
+MIDIClient.sources[1]; //Sintaxis alternativa de .at
 MIDIIn.connect(device: MIDIClient.sources[1]);
 
 //Una vez conectado algun dispositivo podemos comprobar y monitorear si estamos recibiendo mensajes MIDI:
@@ -94,9 +93,7 @@ Si queremos que SC realice acciones en respuesta a un mensaje MIDI entrante, uti
 
 Las definiciones MIDI registran funciones a realizarse cuando se recibe un mensaje MIDI. Se crean con la clase MIDIdef.
 
-MIDIdef responde a los mensajes MIDI más comunes por medio de los métodos .noteOn, .noteOff, y .cc . Para una recepción general de diferentes mensajes usamos el método .new
-
-La lista completa de métodos se puede consultar en la ayuda de esta clase.
+MIDIdef responde a los mensajes MIDI más comunes por medio de los métodos .noteOn, .noteOff, y .cc . La lista completa de métodos se puede consultar en la ayuda de esta clase.
 */
 
 /*Para el siguiente ejemplo usaremos el método .cc. Sus argumentos son:
@@ -109,102 +106,50 @@ La lista completa de métodos se puede consultar en la ayuda de esta clase.
 6) argTemplate: Argumento opcional consistente en un entero o una función que responde a la comparación con los datos de los mensajes MIDI entrantes, si esa comprobación es verdadera, se ejecuta la función derivada de nuestra definción MIDI.
 */
 
+ //Estos argumentos son muy similares a los de los demás tipos de mensajes MIDI como .noteOn y .noteOff
 (
 MIDIdef.cc( //Método .cc Responderá filtrando únicamente los mensajes cc.
-	key: \primerMIDIdef,
-	func: {{ //Función
-		var sigs;
-		sigs = 100.do({
-			Saw.ar(rrand(180, 239))});
-		Splay.ar(sigs);
-}.play},
-	ccNum: 48,
-	chan: 0,
-	argTemplate: {arg val; val == 100};
+	key: \primerMIDIdef, //Identificador de la función
+	func: {
+		{ //Función
+		var sigs, sig;
+		sigs = 12.collect({
+			Saw.ar(rrand(180, 239), rrand(0.5,1)) *
+			EnvGen.kr(Env.perc,doneAction: 2);
+		});
+		sig = Splay.ar(sigs * 0.8);
 
+		FreeVerb.ar(sig, 0.7, 0.67, 1);
+	}.play;
+},
+	ccNum: 0, //Números cc
+	chan: 1, //canal
+	argTemplate: {arg val; val == 127};
 );
 )
 
-
-/*
-Si lo que buscamos es mayor felxibilidad, podemos ocupar el método .new Sus argumentos son los siguientes:
-
-1) key: Symbol identificador de la definción
-2) func: Función que se ejecutará cuando se reciba el mensaje MIDI que nosotros especifiquemos.	Cuando se configura para recibir mensajes  noteOn, noteOff, control y polytouch, estos pasan sus argumentos val, num, chan o src a la función a ejecutarse si es que queremos utilizarlos.
-3) msgNum: Entero indiando el número de un mensaje
-4) chan: Entero indicando el canal del cuál leer. Puede ser un array. Si es nil lee todos los canales.
-5) msgType: Un symbol indicando el tipo de mensajes MIDI a recibir. Las posibilidades son: \noteOn, \noteOff, \control, \touch, \polytouch, \bend, \program, \sysex, \mtcQF, \smpte, \songPosition, \songSelect, \tuneRequest, \midiClock, \sysrt, \tick, \start, \continue, \stop, \activeSense, y \reset.
-6) srcID: identificador numérico del dispositivo a leer. Si es nil recibe mensajes de cualquier dispositivo.
-*/
-
-(
-var chanls = rrand(1,16);
-
-MIDIdef.new(
-	key: \tiroAlBlanco,
-	func: {"¡Diste en el blanco!".postln},
-	msgNum: Array.fill(rrand(3,8), {rrand(0,127)}),
-	chan: Array.series(chanls, 0, 1),
-	msgType: [\noteOn, \noteOff, \control, \touch, \polytouch, \bend, \program, \sysex, \mtcQF, \smpte, \songPosition, \songSelect, \tuneRequest, \midiClock, \sysrt, \tick, \start, \continue, \stop, \activeSense,\reset].scramble[..rrand(5, 10)]
-	);
-)
-
-
-
-3) ccNum: Número de mensaje de control
-4) chan: Canal específico del cuál detecar mensajes.
-5) srcID: Número correspondiente al identificador del dispositivo a utilizar. Por defecto es nil, lo cuál implica que se lea al mismo tiempo de todos los dispositivos conectados.
-6) argTemplate: Argumento opcional consistente en un entero o una función que responde a la comparación con los datos de los mensajes MIDI entrantes, si esa comprobación es verdadera, se ejecuta la función derivada de nuestra definción MIDI.
-MIDIdef.new(
-	key: \ctrlNew,
-	func: {{Saw.ar(Array.fill(2,{rrand(220,250)}),0.3) * Env.perc.kr(2)}.play},
-	ccNum: 0,
-	chan: 1 ,
-	argTemplate: {arg val; val == 127}
-);
-
-MIDIdef.new( //Método .new
-	key: \ctrlNew,
-	func: {{Saw.ar(Array.fill(2,{rrand(220,250)}),0.3) * Env.perc.kr(2)}.play},
-	ccNum: 0,
-	chan: 1,
-	argTemplate: {arg val; val == 127}
-);
-
-MIDIdef.cc( //Método .cc
-	key: \ctrlCC,
-	func: {{Saw.ar(Array.fill(2,{rrand(220,250)}),0.3) * Env.perc.kr(2)}.play},
-	ccNum: 0,
-	chan: 1,
-	argTemplate: {arg val; val == 127}
-);
-
-//El siguiente sintetizador posee varios parámetros modulables, para el ejemplo escogeremos la frecuencia base (expresada en números MIDI) y la frecuencia moduladora(expresada en HZ):
+//El siguiente sintetizador posee varios parámetros modulables, para el ejemplo escogeremos la amplitud, la frecuencia base (expresada en números MIDI) y la frecuencia moduladora(expresada en Hz):
 
 (
 SynthDef(\phonk, {
-	arg midiNote = 60, amp = 0.4, modFreq = 5, gate = 1;
-	var env, sig, sig1, sig2, sig3, offsets, mod, rev;
+	arg midiNote = 40, amp = 0.4, modFreq = 5, gate = 1;
+	var env, sig, sig1, sig2, sig3, desp, mod, rev;
 
 	env = Env.asr().kr(2,gate);
 
-	offsets = [ -0.4, 0, 0.4];
+	mod  = SinOsc.ar(modFreq).range(0,0.3);
 
-	mod  = SinOsc.ar(modFreq).range(0,1);
+	sig1 = Saw.ar(midiNote.midicps, mod);
 
-	sig1 = offsets.collect{ |off|
-		Saw.ar((midiNote - 5).midicps + off, mod )};
+	sig2 = Saw.ar((midiNote + 7).midicps, mod);
 
-	sig2 = offsets.collect{ |off|
-		Saw.ar((midiNote - 12).midicps + off, mod)};
+	sig3 = Saw.ar((midiNote + 12).midicps, mod);
 
-	sig3 = Saw.ar(midiNote.midicps, mod);
-
-	sig = (sig1 + sig2 + sig3) * env * amp;
+	sig = Splay.ar(sig3) * env * amp;
 
 	rev = FreeVerb.ar(sig,0.5);
 
-	Out.ar(0,rev!2);
+	Out.ar(0,rev);
 
 }).add
 )
@@ -212,52 +157,50 @@ SynthDef(\phonk, {
 ~phonkP = Synth(\phonk); //Prender el sintetizador
 ~phonkP.set(\gate,0);//Apagar el sintetizador
 
+/*
+Para mapear parámetros e información
 
-/*Escogeremos un rango de valores para mapear a su equivalente a 0 a 127. En este caso utilizaremos los números MIDI del 36 al 95  (5 ocatvas) para la fecuencia base y 0 a 20 la frecuencia modulatoria
 
-0 a 127 = 36 a 95 para fecuencia base
-0 a 127 = 0 a 20 para la frecuencia modulatoria
+Primeramente crearemos un bus de control que contendrá los parámetros arrojados por nuestro mapeo MIDI.
 
-Posteriormente crearemos un bus de control que conendrá los parámetros arrojados por nuestro mapeo MIDI.
-Opcionalmente también se puede asignar un valor por default
+Opcionalmente también podemos asignar un valor por defecto.
 */
 
-~note = Bus.control(s,1); //Creación del bus
-~note.set(60); //Valor por defecto
+~nota = Bus.control(s,1); //Creación del bus
+~nota.set(60); //Valor por defecto
 
 ~freqMod = Bus.control(s,1);
 ~freqMod.set(5);
 
+~amp = Bus.control(s,1);
+~amp.set(0.5);
 
 //Procedemos a modificar el sintetizador para aceptar buses de control con la classe In.kr
 
 (
 SynthDef(\phonk, {
-	arg amp = 0.4, gate = 1;
-	var env, sig, sig1, sig2, sig3, offsets, mod, rev, midiNote, modFreq;
+	arg gate = 1;
+	var amp, env, sig, sig1, sig2, sig3, offsets, mod, rev, midiNote, modFreq;
 
-	midiNote = In.kr(~note);
+	midiNote = In.kr(~nota);
 	modFreq = In.kr(~freqMod);
+	amp = In.kr(~amp);
 
 	env = Env.asr().kr(2,gate);
 
-	offsets = [ -0.4, 0, 0.4];
+	mod  = SinOsc.ar(modFreq).range(0,0.3);
 
-	mod  = SinOsc.ar(modFreq).range(0,1);
+	sig1 = Saw.ar(midiNote.midicps, mod);
 
-	sig1 = offsets.collect{ |off|
-		Saw.ar((midiNote - 5).midicps + off, mod )};
+	sig2 = Saw.ar((midiNote + 7).midicps, mod);
 
-	sig2 = offsets.collect{ |off|
-		Saw.ar((midiNote - 12).midicps + off, mod)};
+	sig3 = Saw.ar((midiNote + 12).midicps, mod);
 
-	sig3 = Saw.ar(midiNote.midicps, mod);
-
-	sig = (sig1 + sig2 + sig3) * env * amp;
+	sig = Splay.ar(sig3) * env * amp;
 
 	rev = FreeVerb.ar(sig,0.5);
 
-	Out.ar(0,rev!2);
+	Out.ar(0,rev);
 
 }).add
 )
@@ -265,26 +208,20 @@ SynthDef(\phonk, {
 ~phonkP = Synth(\phonk); //Prender el sintetizador
 ~phonkP.set(\gate,0);//Apagar el sintetizador
 
-//Para finalizar, agregaremos un objeto MIDIdef para mapear nuestros valores y reflejarlos en el bus de control.
+//Para finalizar, agregaremos un objeto MIDIdef para mapear nuestros valores y reflejarlos en el bus de control. Para esto utilizaremos el primer argumento por defecto de MIDIDef:
 
-/*El método  .cc responde a mensajes de control MIDI, (más adelante veremos cómo repsonder a mensajes noteOn y note Off)
+MIDIdef.noteOn(\printArgs, { |val, num, ch, id| [val,num,ch,id].postln}, chan: nil);
 
-Los argumentos de MIDIdef.cc son
-1.Nombre
-2.Función que responderá a los valores entrantes
-3.Número de Control Change que leerá
-4.Canal que se leera
-5.srcID: Entreada MIDI que se leera
-6.Función opcional que indica si los valores cumplen cierta condición para que la función principal se ejecute.
+MIDIdef.noteOn(\note, { |val, num |
+	"Nota MIDI: ".post;
+	~nota.value_(num).postln;
 
-Los príncipales y más útiles son 1,2,3 y 4. Los demás pueden omitirse en este ejercicio.
-*/
+	"Amplitud: ".post;
+	~amp.value_(val.linlin(0,127,0,1).postln;
+	)
+});
 
-MIDIdef.cc(\note, { },ccNum: 93, chan: 0);
-
-MIDIdef.cc(\note, { |val| ("Nota MIDI ").post; ~note.value_(val.linlin(0,127,36,95).asInteger.postln)},ccNum: 93, chan: 0);
-
-MIDIdef.cc(\freqMod, { |val| ("Frecuencia de modulación ").post; ~freqMod.value_(val.linlin(0,127,0,20).asInteger.postln)},ccNum: 18, chan: 0);
+MIDIdef.cc(\freqMod, { |val| ("Frecuencia de modulación: ").post; ~freqMod.value_(val.linlin(0,127,0,30).asInteger.postln)},ccNum: 0, chan: 0);
 
 //////////////////////////////MAPEO DE NOTAS MIDI /////////////////////
 //Para mapear las notas de un controlador a notas MIDI, usaremos un sintetizador adaptado y la clase MIDIdef.noteOn y MIDIdef.noteOff
